@@ -92,7 +92,7 @@ def main():
                     print(f"Poem data: {poem}")
             
             # Add small delay between requests
-            time.sleep(0.1)
+            time.sleep(0.01)
     
     # Save the data to a JSON file
     with open("poetry_database.json", "w", encoding="utf-8") as f:

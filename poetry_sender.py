@@ -3,6 +3,8 @@ import random
 import yagmail
 import os
 from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv()
 
 def load_poetry_database(filename="poetry_database.json"):
     """Load the poetry database from a JSON file"""
@@ -63,8 +65,8 @@ def format_poem(poem):
 def send_poem_email(recipient_email, poem):
     """Send the poem via email using yagmail"""
     # Get email credentials from environment variables for security
-    sender_email = os.environ.get("EMAIL_USER")
-    app_password = os.environ.get("EMAIL_PASSWORD")
+    sender_email = os.getenv("EMAIL_USER")
+    app_password = os.getenv("EMAIL_PASSWORD")
     
     if not sender_email or not app_password:
         print("Email credentials not found in environment variables!")
@@ -89,7 +91,7 @@ def send_poem_email(recipient_email, poem):
 
 def main():
     # Configuration - recipient email
-    recipient_email = os.environ.get("RECIPIENT_EMAIL", "your_email@example.com")
+    recipient_email = os.getenv("RECIPIENT_EMAIL", "your_email@example.com")
     
     # Load the poetry database
     poetry_data = load_poetry_database()

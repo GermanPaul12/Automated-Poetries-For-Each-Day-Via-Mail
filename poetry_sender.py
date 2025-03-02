@@ -92,7 +92,7 @@ def send_poem_email(recipient_email, poem):
 def main():
     # Configuration - recipient email
     recipient_email = os.getenv("RECIPIENT_EMAIL", "your_email@example.com")
-    
+    recipient_email2 = os.getenv("RECIPIENT_EMAIL2", "your_email@example.com")
     # Load the poetry database
     poetry_data = load_poetry_database()
     if not poetry_data:
@@ -129,6 +129,8 @@ def main():
         save_poetry_database(poetry_data)
         print("Poetry database updated successfully.")
         print(f"Email sent successfully to {recipient_email}!")
+        send_poem_email(recipient_email2, poem)
+        print(f"Email sent successfully to {recipient_email2}!")
     else:
         print("Failed to send email. No changes made to database.")
 

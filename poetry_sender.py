@@ -6,7 +6,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
-def load_poetry_database(filename="poetry_database.json"):
+def load_poetry_database(filename="short_poetries.json"):
     """Load the poetry database from a JSON file"""
     try:
         with open(filename, "r", encoding="utf-8") as f:
@@ -18,7 +18,7 @@ def load_poetry_database(filename="poetry_database.json"):
         print(f"Error: {filename} is not valid JSON!")
         return None
 
-def save_poetry_database(data, filename="poetry_database.json"):
+def save_poetry_database(data, filename="short_poetries.json"):
     """Save the updated poetry database to a JSON file"""
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)

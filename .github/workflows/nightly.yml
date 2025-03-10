@@ -32,4 +32,4 @@ jobs:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
           RECIPIENT_EMAIL2: ${{ secrets.RECIPIENT_EMAIL2 }}
-        run: uv run your_script.py
+        run: uv run poetry_sender.py

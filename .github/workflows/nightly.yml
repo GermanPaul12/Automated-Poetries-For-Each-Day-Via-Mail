@@ -1,0 +1,34 @@
+name: Nightly Python Script with uv
+
+on:
+  schedule:
+    # Runs every day at 4 AM UTC
+    - cron: '0 4 * * *'
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out your repository code
+      - uses: actions/checkout@v4
+
+      # Install uv using the official setup-uv action and set the Python version to 3.10
+      - name: Install uv and set Python version
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"         # or pin to a specific version like "0.6.5"
+          python-version: "3.10"      # Ensures uv uses Python 3.10
+
+      # Sync the project dependencies using uv
+      - name: Sync environment and dependencies
+        run: uv sync --all-extras --dev
+
+      # Run your Python script via uv run
+      - name: Run Python script
+        env:
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+          RECIPIENT_EMAIL2: ${{ secrets.RECIPIENT_EMAIL2 }}
+        run: uv run your_script.py

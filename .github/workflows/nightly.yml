@@ -4,6 +4,7 @@ on:
   schedule:
     # Runs every day at 4 AM UTC
     - cron: '0 4 * * *'
+  workflow_dispatch: # This enables manual triggering in github actions
 
 jobs:
   run-script:

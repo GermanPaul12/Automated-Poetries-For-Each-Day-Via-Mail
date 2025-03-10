@@ -2,9 +2,38 @@ import json
 import random
 import yagmail
 import os
+import argparse
 from datetime import datetime
 from dotenv import load_dotenv
+
+# Load local .env file if present
 load_dotenv()
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Send a daily poem via email."
+    )
+    parser.add_argument(
+        "--email-user",
+        default=os.getenv("EMAIL_USER"),
+        help="Sender email address (defaults to EMAIL_USER env var)"
+    )
+    parser.add_argument(
+        "--email-password",
+        default=os.getenv("EMAIL_PASSWORD"),
+        help="Sender email app password (defaults to EMAIL_PASSWORD env var)"
+    )
+    parser.add_argument(
+        "--recipient-email",
+        default=os.getenv("RECIPIENT_EMAIL", "your_email@example.com"),
+        help="Primary recipient email address (defaults to RECIPIENT_EMAIL env var)"
+    )
+    parser.add_argument(
+        "--recipient-email2",
+        default=os.getenv("RECIPIENT_EMAIL2", "your_email@example.com"),
+        help="Secondary recipient email address (defaults to RECIPIENT_EMAIL2 env var)"
+    )
+    return parser.parse_args()
 
 def load_poetry_database(filename="short_poetries.json"):
     """Load the poetry database from a JSON file"""
@@ -25,15 +54,12 @@ def save_poetry_database(data, filename="short_poetries.json"):
 
 def select_poem(poetry_data):
     """Randomly select a poem that hasn't been sent yet"""
-    # Get all poems that haven't been sent
-    available_poems = [poem for poem in poetry_data["poems"] if not poem["sent"]]
+    available_poems = [poem for poem in poetry_data["poems"] if not poem.get("sent")]
     
-    # If all poems have been sent, return None or reset all poems
     if not available_poems:
         print("All poems have been sent already!")
         return None
     
-    # Randomly select a poem
     selected_poem = random.choice(available_poems)
     return selected_poem
 
@@ -43,40 +69,32 @@ def format_poem(poem):
     title = poem["title"]
     author = poem["author"]
     
-    # Format the poem text
     poem_text = "\n".join(lines)
     
-    # Create email content
     email_content = f"""
     <html>
-    <body>
-    <h2>{title}</h2>
-    <h3>by {author}</h3>
-    <pre style="font-family: Arial, sans-serif; white-space: pre-wrap;">
+      <body>
+        <h2>{title}</h2>
+        <h3>by {author}</h3>
+        <pre style="font-family: Arial, sans-serif; white-space: pre-wrap;">
 {poem_text}
-    </pre>
-    <p><i>Poem of the day - {datetime.now().strftime('%Y-%m-%d')}</i></p>
-    </body>
+        </pre>
+        <p><i>Poem of the day - {datetime.now().strftime('%Y-%m-%d')}</i></p>
+      </body>
     </html>
     """
-    
-    return email_content, f"Daily Poem: {title} by {author}"
+    subject = f"Daily Poem: {title} by {author}"
+    return email_content, subject
 
-def send_poem_email(recipient_email, poem):
+def send_poem_email(sender_email, app_password, recipient_email, poem):
     """Send the poem via email using yagmail"""
-    # Get email credentials from environment variables for security
-    sender_email = os.getenv("EMAIL_USER")
-    app_password = os.getenv("EMAIL_PASSWORD")
-    
     if not sender_email or not app_password:
-        print("Email credentials not found in environment variables!")
-        print("Set EMAIL_USER and EMAIL_PASSWORD environment variables.")
+        print("Email credentials not found!")
+        print("Set EMAIL_USER and EMAIL_PASSWORD environment variables or pass via command-line arguments.")
         return False
     
-    # Format the poem
     email_content, subject = format_poem(poem)
     
-    # Send the email
     try:
         yag = yagmail.SMTP(sender_email, app_password)
         yag.send(
@@ -90,26 +108,25 @@ def send_poem_email(recipient_email, poem):
         return False
 
 def main():
-    # Configuration - recipient email
-    recipient_email = os.getenv("RECIPIENT_EMAIL", "your_email@example.com")
-    recipient_email2 = os.getenv("RECIPIENT_EMAIL2", "your_email@example.com")
-    # Load the poetry database
+    args = parse_args()
+    sender_email = args.email_user
+    app_password = args.email_password
+    recipient_email = args.recipient_email
+    recipient_email2 = args.recipient_email2
+
     poetry_data = load_poetry_database()
     if not poetry_data:
         print("Failed to load poetry database.")
         return
     
-    # Select a random poem
     poem = select_poem(poetry_data)
     if not poem:
         print("No poems available to send.")
         return
     
-    # Send the poem via email
     print(f"Sending poem: '{poem['title']}' by {poem['author']}")
-    success = send_poem_email(recipient_email, poem)
+    success = send_poem_email(sender_email, app_password, recipient_email, poem)
     
-    # Update the database if email was sent successfully
     if success:
         # Mark the poem as sent
         for p in poetry_data["poems"]:
@@ -117,20 +134,21 @@ def main():
                 p["sent"] = True
                 break
         
-        # Add to sent list with timestamp
-        poetry_data["sent"].append({
+        poetry_data.setdefault("sent", []).append({
             "id": poem["id"],
             "title": poem["title"],
             "author": poem["author"],
             "date_sent": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         })
         
-        # Save the updated database
         save_poetry_database(poetry_data)
         print("Poetry database updated successfully.")
         print(f"Email sent successfully to {recipient_email}!")
-        send_poem_email(recipient_email2, poem)
-        print(f"Email sent successfully to {recipient_email2}!")
+        # Send to second recipient
+        if send_poem_email(sender_email, app_password, recipient_email2, poem):
+            print(f"Email sent successfully to {recipient_email2}!")
+        else:
+            print(f"Failed to send email to {recipient_email2}.")
     else:
         print("Failed to send email. No changes made to database.")
 
